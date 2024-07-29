@@ -7,8 +7,10 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/bloom"
 )
 
 func init() {
@@ -26,8 +28,36 @@ type PebbleDB struct {
 var _ DB = (*PebbleDB)(nil)
 
 func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
-	opts := &pebble.Options{}
-	opts.EnsureDefaults()
+	opts := &pebble.Options{
+		MaxOpenFiles: 16384,
+		// A value of 2 triggers a compaction when there is 1 sub-level.
+		L0CompactionThreshold:       2,
+		L0StopWritesThreshold:       1000,
+		LBaseMaxBytes:               64 << 20, // 64 MB
+		Levels:                      make([]pebble.LevelOptions, 7),
+		MaxConcurrentCompactions:    func() int { return 3 },
+		MemTableSize:                64 << 20, // 64 MB
+		MemTableStopWritesThreshold: 4,
+		FlushDelayDeleteRange:       10 * time.Second,
+		FlushDelayRangeKey:          10 * time.Second,
+		TargetByteDeletionRate:      128 << 20, // 128 MB
+	}
+
+	opts.Cache = pebble.NewCache(8192 << 20) // 8 GiB
+	opts.Experimental.L0CompactionConcurrency = 2
+
+	for i := 0; i < len(opts.Levels); i++ {
+		l := &opts.Levels[i]
+		l.BlockSize = 32 << 10       // 32 KB
+		l.IndexBlockSize = 256 << 10 // 256 KB
+		l.FilterPolicy = bloom.FilterPolicy(10)
+		l.FilterType = pebble.TableFilter
+		if i > 0 {
+			l.TargetFileSize = opts.Levels[i-1].TargetFileSize * 2
+		}
+		l.EnsureDefaults()
+	}
+
 	return NewPebbleDBWithOpts(name, dir, opts)
 }
 
@@ -158,8 +188,11 @@ func (db *PebbleDB) Print() error {
 }
 
 // Stats implements DB.
-func (*PebbleDB) Stats() map[string]string {
-	return nil
+func (db *PebbleDB) Stats() map[string]string {
+	m := db.db.Metrics()
+	stats := make(map[string]string, 1)
+	stats["pebbledb.stats"] = m.String()
+	return stats
 }
 
 // NewBatch implements DB.
