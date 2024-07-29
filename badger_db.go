@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v4"
 )
 
 func init() { registerDBCreator(BadgerDBBackend, badgerDBCreator) }
@@ -167,6 +167,11 @@ func (b *BadgerDB) ReverseIterator(start, end []byte) (Iterator, error) {
 }
 
 func (b *BadgerDB) Stats() map[string]string {
+	return nil
+}
+
+func (b *BadgerDB) Compact(start, end []byte) error {
+	// Explicit compaction is not currently supported in badger
 	return nil
 }
 

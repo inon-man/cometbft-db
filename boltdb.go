@@ -34,6 +34,8 @@ type BoltDB struct {
 var _ DB = (*BoltDB)(nil)
 
 // NewBoltDB returns a BoltDB with default options.
+//
+// Deprecated: boltdb is deprecated and will be removed in the future.
 func NewBoltDB(name, dir string) (DB, error) {
 	return NewBoltDBWithOpts(name, dir, bbolt.DefaultOptions)
 }
@@ -202,4 +204,10 @@ func (bdb *BoltDB) ReverseIterator(start, end []byte) (Iterator, error) {
 		return nil, err
 	}
 	return newBoltDBIterator(tx, start, end, true), nil
+}
+
+func (bdb *BoltDB) Compact(start, end []byte) error {
+	// There is no explicit CompactRange support in BoltDB, only a function that copies the
+	// entire DB from one place to another while doing deletions. Hence we do not support it.
+	return nil
 }

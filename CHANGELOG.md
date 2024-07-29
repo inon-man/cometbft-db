@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## v0.12.0
+
+*Apr 10, 2024*
+
+This release deprecates boltdb and cleveldb. Also, Go MSRV is bumped to 1.22.
+
+### FEATURES
+
+- Deprecate boltdb and cleveldb. If you're using either of those, please reach
+  out ([\#153](https://github.com/cometbft/cometbft-db/pull/153))
+
+## v0.11.0
+
+*Feb 7, 2024*
+
+This release adds support for explicit compaction. Please note that badger and
+bolt do not support this.
+
+### BREAKING CHANGES
+
+- Expanded db interface to support compaction ([\#111](https://github.com/cometbft/cometbft-db/pull/111))
+
+### FEATURES
+
+- Add compaction support to the databases ([\#111](https://github.com/cometbft/cometbft-db/pull/111))
+
 ## v0.10.0
 
 *Jan 26, 2024*
