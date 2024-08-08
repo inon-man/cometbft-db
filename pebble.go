@@ -32,13 +32,13 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 	opts := &pebble.Options{
 		Cache:                       cache,
 		FormatMajorVersion:          pebble.FormatNewest,
-		L0CompactionThreshold:       2,
+		L0CompactionThreshold:       4,
 		L0StopWritesThreshold:       1000,
 		LBaseMaxBytes:               64 << 20, // 64 MB
 		Levels:                      make([]pebble.LevelOptions, 7),
 		MaxOpenFiles:                16384,
 		MemTableSize:                64 << 20, // 64 MB
-		MemTableStopWritesThreshold: 4,
+		MemTableStopWritesThreshold: 8,
 		MaxConcurrentCompactions:    func() int { return 3 },
 	}
 
@@ -57,8 +57,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		}
 		l.EnsureDefaults()
 	}
-	opts.Levels[6].FilterPolicy = nil
-	opts.FlushSplitBytes = opts.Levels[0].TargetFileSize
+	opts.EnsureDefaults()
 	return NewPebbleDBWithOpts(name, dir, opts)
 }
 
